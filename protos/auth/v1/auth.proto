@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "byoverr/auth/v1;authv1";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// AuthService issues access JWT (HS256) + refresh tokens (opaque).
+// Access token is expected in gRPC metadata:
+//   authorization: "Bearer <access_token>"
+service AuthService {
+  rpc Register(RegisterRequest) returns (AuthPair);
+  rpc Login(LoginRequest) returns (AuthPair);
+  rpc Refresh(RefreshRequest) returns (AuthPair);
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  rpc WhoAmI(google.protobuf.Empty) returns (WhoAmIResponse);
+}
+
+message RegisterRequest {
+  string email = 1;         // required
+  string password = 2;      // required
+  string display_name = 3;  // required
+  ClientInfo client = 4;    // optional
+}
+
+message LoginRequest {
+  string email = 1;        // required
+  string password = 2;     // required
+  ClientInfo client = 3;   // optional
+}
+
+message RefreshRequest {
+  string refresh_token = 1; // required
+  ClientInfo client = 2;    // optional (for anomaly checks)
+}
+
+message LogoutRequest {
+  string refresh_token = 1; // required
+}
+
+message AuthPair {
+  string access_token = 1;   // JWT (HS256)
+  google.protobuf.Timestamp access_expires_at = 2;
+
+  string refresh_token = 3;  // opaque
+  google.protobuf.Timestamp refresh_expires_at = 4;
+
+  string user_id = 5;        // uuid as string
+  string session_id = 6;     // uuid as string (refresh session id)
+  repeated string roles = 7; // ["user","admin"]
+}
+
+message ClientInfo {
+  string device_id = 1;     // stable per device/app install (uuid)
+  string device_name = 2;   // "MacBook", "Pixel 9", etc.
+  string app_version = 3;   // optional
+  string platform = 4;      // optional: "cli", "android", "ios", "web"
+  string ip = 5;
+  string user_agent = 6;
+}
+
+message WhoAmIResponse {
+  string user_id = 1;
+  string email = 2;
+  string display_name = 3;
+  repeated string roles = 4;
+  string session_id = 5; // optional if you put sid into access JWT claims
+}

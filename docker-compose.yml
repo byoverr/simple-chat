@@ -1,0 +1,55 @@
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    environment:
+      - APP_ENV=local
+      - LOG_LEVEL=debug
+      - GRPC_ADDR=:50051
+      - DATABASE_URL=postgres://auth:authpass@postgres:5432/authdb?sslmode=disable
+      # Change these to secure values in production
+      - JWT_SECRET=supersecretkey_must_be_very_long_32bytes_at_least
+      - JWT_ACCESS_TTL=15m
+      - REFRESH_TTL=720h
+      - REFRESH_PEPPER=somepeppersecret
+      - REFRESH_TOKEN_BYTES=32
+      - REFRESH_REUSE_DETECT=true
+      - PASSWORD_HASH_ALGO=bcrypt
+      - BCRYPT_COST=12
+      - PASSWORD_MIN_LEN=8
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    image: migrate/migrate:v4.19.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./auth-service/migrations:/migrations
+    command: ["-path", "migrations", "-database", "postgres://auth:authpass@postgres:5432/authdb?sslmode=disable", "up"]
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=auth
+      - POSTGRES_PASSWORD=authpass
+      - POSTGRES_DB=authdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d authdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
