@@ -15,6 +15,11 @@ func NewBcryptHasher(cost int) PasswordHasher {
 	return &bcryptHasher{cost: cost}
 }
 
+type PasswordHasher interface {
+	Hash(password string) (string, error)
+	Compare(hash string, password string) bool
+}
+
 func (h *bcryptHasher) Hash(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), h.cost)
 	if err != nil {

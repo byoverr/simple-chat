@@ -46,6 +46,8 @@ func (s *AuthServer) Register(ctx context.Context, req *authv1.RegisterRequest) 
 		return nil, status.Error(codes.InvalidArgument, "email, password, display_name are required")
 	}
 
+	s.log.Info().Str("email", req.GetEmail()).Msg("register request")
+
 	out, err := s.uc.Register(ctx, dto.RegisterIn{
 		Email:       req.GetEmail(),
 		Password:    req.GetPassword(),
@@ -53,8 +55,11 @@ func (s *AuthServer) Register(ctx context.Context, req *authv1.RegisterRequest) 
 		Client:      clientFromPB(req.GetClient()),
 	})
 	if err != nil {
-		return nil, mapErr(err)
+		s.log.Error().Err(err).Str("email", req.GetEmail()).Msg("register failed")
+		return nil, err
 	}
+
+	s.log.Info().Str("email", req.GetEmail()).Msg("register success")
 	return authPairToPB(out), nil
 }
 
@@ -67,14 +72,19 @@ func (s *AuthServer) Login(ctx context.Context, req *authv1.LoginRequest) (*auth
 		return nil, status.Error(codes.InvalidArgument, "email and password are required")
 	}
 
+	s.log.Info().Str("email", req.GetEmail()).Msg("login request")
+
 	out, err := s.uc.Login(ctx, dto.LoginIn{
 		Email:    req.GetEmail(),
 		Password: req.GetPassword(),
 		Client:   clientFromPB(req.GetClient()),
 	})
 	if err != nil {
-		return nil, mapErr(err)
+		s.log.Error().Err(err).Str("email", req.GetEmail()).Msg("login failed")
+		return nil, err
 	}
+
+	s.log.Info().Str("email", req.GetEmail()).Msg("login success")
 	return authPairToPB(out), nil
 }
 
@@ -87,13 +97,18 @@ func (s *AuthServer) Refresh(ctx context.Context, req *authv1.RefreshRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "refresh_token is required")
 	}
 
+	s.log.Info().Msg("refresh request")
+
 	out, err := s.uc.Refresh(ctx, dto.RefreshIn{
 		RefreshToken: req.GetRefreshToken(),
 		Client:       clientFromPB(req.GetClient()),
 	})
 	if err != nil {
-		return nil, mapErr(err)
+		s.log.Error().Err(err).Msg("refresh failed")
+		return nil, err
 	}
+
+	s.log.Info().Msg("refresh success")
 	return authPairToPB(out), nil
 }
 
@@ -106,15 +121,44 @@ func (s *AuthServer) Logout(ctx context.Context, req *authv1.LogoutRequest) (*em
 		return nil, status.Error(codes.InvalidArgument, "refresh_token is required")
 	}
 
+	s.log.Info().Msg("logout request")
+
 	if err := s.uc.Logout(ctx, req.GetRefreshToken()); err != nil {
+		s.log.Error().Err(err).Msg("logout failed")
 		return nil, mapErr(err)
 	}
+
+	s.log.Info().Msg("logout success")
 	return &emptypb.Empty{}, nil
 }
 
 func (s *AuthServer) WhoAmI(ctx context.Context, _ *emptypb.Empty) (*authv1.WhoAmIResponse, error) {
-	// TODO: extract user_id from ctx (set by auth interceptor)
-	return nil, status.Error(codes.Unimplemented, "WhoAmI requires auth interceptor to extract user_id from JWT")
+	userIDVal := ctx.Value("user_id")
+	if userIDVal == nil {
+		s.log.Error().Msg("user_id not found in context")
+		return nil, status.Error(codes.Unauthenticated, "user_id not found in context")
+	}
+	userID, ok := userIDVal.(string)
+	if !ok || userID == "" {
+		s.log.Error().Msg("user_id is invalid")
+		return nil, status.Error(codes.Unauthenticated, "user_id is invalid")
+	}
+
+	info, err := s.uc.WhoAmI(ctx, userID)
+	if err != nil {
+		s.log.Error().Err(err).Str("user_id", userID).Msg("failed to get user info")
+		return nil, mapErr(err)
+	}
+
+	s.log.Info().Str("user_id", userID).Msg("WhoAmI success")
+
+	return &authv1.WhoAmIResponse{
+		UserId:      info.UserID,
+		Email:       info.Email,
+		DisplayName: info.DisplayName,
+		Roles:       info.Roles,
+		SessionId:   info.SessionID,
+	}, nil
 }
 
 // Helpers

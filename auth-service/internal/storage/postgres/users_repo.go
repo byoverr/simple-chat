@@ -20,7 +20,21 @@ type usersRepo struct {
 	table string
 }
 
-func (r *usersRepo) Create(ctx context.Context, in storage.CreateUser) (models.User, error) {
+type UsersRepo interface {
+	Create(ctx context.Context, u CreateUser) (models.User, error)
+	GetByEmail(ctx context.Context, email string) (models.User, error)
+	GetByID(ctx context.Context, id string) (models.User, error)
+}
+
+type CreateUser struct {
+	Email             string
+	DisplayName       string
+	PasswordHash      string
+	Roles             []string
+	PasswordChangedAt time.Time
+}
+
+func (r *usersRepo) Create(ctx context.Context, in CreateUser) (models.User, error) {
 	now := time.Now().UTC()
 	id := uuid.NewString()
 

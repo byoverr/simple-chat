@@ -6,14 +6,24 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/byoverr/auth-service/internal/storage"
 )
 
 type Store struct {
 	db *gorm.DB
 	tu string
 	ts string
+}
+
+type StoreInterface interface {
+	WithinTx(ctx context.Context, fn func(ctx context.Context, tx TxStoreInterface) error) error
+
+	Users() UsersRepo
+	Sessions() SessionsRepo
+}
+
+type TxStoreInterface interface {
+	Users() UsersRepo
+	Sessions() SessionsRepo
 }
 
 func Connect(dsn string, schema string) (*Store, error) {
@@ -51,15 +61,15 @@ func (s *Store) Close() error {
 	return sqlDB.Close()
 }
 
-func (s *Store) Users() storage.UsersRepo {
+func (s *Store) Users() UsersRepo {
 	return &usersRepo{db: s.db, table: s.tu}
 }
 
-func (s *Store) Sessions() storage.SessionsRepo {
+func (s *Store) Sessions() SessionsRepo {
 	return &sessionsRepo{db: s.db, table: s.ts}
 }
 
-func (s *Store) WithinTx(ctx context.Context, fn func(ctx context.Context, tx storage.TxStore) error) error {
+func (s *Store) WithinTx(ctx context.Context, fn func(ctx context.Context, tx TxStoreInterface) error) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return fn(ctx, &txStore{db: tx, tu: s.tu, ts: s.ts})
 	})
@@ -71,9 +81,9 @@ type txStore struct {
 	ts string
 }
 
-func (t *txStore) Users() storage.UsersRepo {
+func (t *txStore) Users() UsersRepo {
 	return &usersRepo{db: t.db, table: t.tu}
 }
-func (t *txStore) Sessions() storage.SessionsRepo {
+func (t *txStore) Sessions() SessionsRepo {
 	return &sessionsRepo{db: t.db, table: t.ts}
 }

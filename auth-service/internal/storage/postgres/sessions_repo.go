@@ -18,7 +18,30 @@ type sessionsRepo struct {
 	table string
 }
 
-func (r *sessionsRepo) Create(ctx context.Context, in storage.CreateSession) (models.RefreshSession, error) {
+type CreateSession struct {
+	UserID     string
+	TokenHash  []byte
+	ExpiresAt  time.Time
+	DeviceID   *string
+	DeviceName *string
+	IP         *string
+	UserAgent  *string
+}
+
+type SessionsRepo interface {
+	Create(ctx context.Context, s CreateSession) (models.RefreshSession, error)
+
+	GetForUpdateByTokenHash(ctx context.Context, tokenHash []byte) (models.RefreshSession, error)
+
+	Revoke(ctx context.Context, id string, replacedBy *string, now time.Time) error
+	TouchLastUsed(ctx context.Context, id string, now time.Time) error
+
+	RevokeAllForUser(ctx context.Context, userID string, now time.Time) error
+
+	RevokeByTokenHash(ctx context.Context, tokenHash []byte, now time.Time) error
+}
+
+func (r *sessionsRepo) Create(ctx context.Context, in CreateSession) (models.RefreshSession, error) {
 	now := time.Now().UTC()
 	id := uuid.NewString()
 

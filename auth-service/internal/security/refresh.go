@@ -16,6 +16,13 @@ type refreshTokens struct {
 	cfg RefreshConfig
 }
 
+type RefreshTokens interface {
+	// New возвращает raw refresh token (opaque) + token_hash (для БД) + expiresAt
+	New(now time.Time) (raw string, hash []byte, exp time.Time, err error)
+	// Hash — для Logout/Refresh входящего refresh_token
+	Hash(raw string) []byte
+}
+
 func NewRefreshTokens(cfg RefreshConfig) RefreshTokens {
 	return &refreshTokens{cfg: cfg}
 }

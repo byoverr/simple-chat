@@ -37,15 +37,15 @@ func New(
 	})
 
 	// 3. Usecase
-	ucCfg := usecase.Config{
+	ucCfg := usecase.UsecaseConfig{
 		PasswordMinLen:     cfg.Auth.Pass.MinLen,
 		RefreshReuseDetect: cfg.Auth.Refresh.ReuseDetect,
 	}
 
-	authService := usecase.NewService(storage, hasher, jwtSigner, refreshTokens, ucCfg)
+	authService := usecase.NewService(log, storage, hasher, jwtSigner, refreshTokens, ucCfg)
 
 	// 4. gRPC
-	grpcApp := grpcapp.New(log, authService, cfg.GRPC.Addr)
+	grpcApp := grpcapp.New(log, authService, jwtSigner, cfg.GRPC.Addr)
 
 	return &App{
 		GRPCServer: grpcApp,

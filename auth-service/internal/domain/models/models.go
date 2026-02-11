@@ -34,6 +34,14 @@ type ClientInfo struct {
 	UserAgent  string
 }
 
+type UserInfo struct {
+	UserID      string
+	Email       string
+	DisplayName string
+	Roles       []string
+	SessionID   string
+}
+
 type AuthPair struct {
 	AccessToken      string
 	AccessExpiresAt  time.Time
@@ -42,12 +50,4 @@ type AuthPair struct {
 	UserID           string
 	SessionID        string
 	Roles            []string
-}
-
-type UserInfo struct {
-	UserID      string
-	Email       string
-	DisplayName string
-	Roles       []string
-	SessionID   string
 }

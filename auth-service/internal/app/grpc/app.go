@@ -9,7 +9,9 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authv1 "github.com/byoverr/auth-proto/gen/go/auth/v1"
+	"github.com/byoverr/auth-service/internal/security"
 	authgrpc "github.com/byoverr/auth-service/internal/transport/grpc/auth"
+	"github.com/byoverr/auth-service/internal/transport/grpc/interceptor"
 )
 
 type App struct {
@@ -18,8 +20,10 @@ type App struct {
 	port       string
 }
 
-func New(log zerolog.Logger, authService authgrpc.AuthUsecase, port string) *App {
-	gRPCServer := grpc.NewServer()
+func New(log zerolog.Logger, authService authgrpc.AuthUsecase, jwt security.JWTSigner, port string) *App {
+	gRPCServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptor.NewAuthInterceptor(jwt, log).Unary()),
+	)
 
 	// Register services
 	authv1.RegisterAuthServiceServer(gRPCServer, authgrpc.NewAuthServer(authService, log))
@@ -60,7 +64,7 @@ func (a *App) Run() error {
 func (a *App) Stop() {
 	const op = "grpcapp.Stop"
 
-	a.log.Info().Msg("stopping grpc server")
+	a.log.Info().Str("op", op).Msg("stopping grpc server")
 
 	a.gRPCServer.GracefulStop()
 }
