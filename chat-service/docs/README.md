@@ -7,7 +7,7 @@
 - отдачу списка чатов с **последним сообщением**
 - realtime доставку событий через **bi-di streaming** (`Connect`)
 
-![alt tag](https://github.com/byoverr/simple_chat/blob/develop/chat-service/docs/img/scheme.png "Схемка")
+![alt tag](https://github.com/byoverr/simple-chat/blob/develop/chat-service/docs/img/scheme.png)
 
 ### Как подключаться
 **gRPC адрес:** `localhost:50052`

@@ -3,7 +3,7 @@
 ## Описание
 Сервис аутентификации и авторизации пользователей. Он отвечает за регистрацию, вход в систему, управление сессиями и выдачу токенов доступа.
 
-![alt tag](https://github.com/byoverr/simple_chat/blob/develop/auth-service/docs/img/scheme.png "Схемка")
+![alt tag](https://github.com/byoverr/simple-chat/blob/develop/auth-service/docs/img/scheme.png)
 
 
 ### Как подключаться
