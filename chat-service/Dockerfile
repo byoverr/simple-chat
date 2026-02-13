@@ -4,10 +4,10 @@ WORKDIR /workspace
 
 COPY go.work go.work.sum ./
 
-COPY auth-service/go.mod auth-service/go.sum ./auth-service/
+COPY chat-service/go.mod chat-service/go.sum ./chat-service/
 COPY protos/go.mod ./protos/
 
-COPY auth-service/ ./auth-service/
+COPY chat-service/ ./chat-service/
 COPY protos/ ./protos/
 
 WORKDIR /workspace/auth-service
@@ -20,7 +20,7 @@ WORKDIR /app
 
 RUN apk --no-cache add ca-certificates tzdata
 
-COPY --from=builder /bin/auth-service /app/auth-service
+COPY --from=builder /bin/chat-service /app/chat-service
 
 EXPOSE 50051
 

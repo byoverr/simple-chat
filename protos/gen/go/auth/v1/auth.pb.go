@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v6.33.2
-// source: auth/v1/auth.proto
+// source: chat/v1/chat.proto
 
 package authv1
 
@@ -503,19 +503,19 @@ var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x93\x01\n" +
+	"\x12auth/v1/chat.proto\x12\achat.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x93\x01\n" +
 	"\x0fRegisterRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
 	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12+\n" +
-	"\x06client\x18\x04 \x01(\v2\x13.auth.v1.ClientInfoR\x06client\"m\n" +
+	"\x06client\x18\x04 \x01(\v2\x13.chat.v1.ClientInfoR\x06client\"m\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12+\n" +
-	"\x06client\x18\x03 \x01(\v2\x13.auth.v1.ClientInfoR\x06client\"b\n" +
+	"\x06client\x18\x03 \x01(\v2\x13.chat.v1.ClientInfoR\x06client\"b\n" +
 	"\x0eRefreshRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\x12+\n" +
-	"\x06client\x18\x02 \x01(\v2\x13.auth.v1.ClientInfoR\x06client\"4\n" +
+	"\x06client\x18\x02 \x01(\v2\x13.chat.v1.ClientInfoR\x06client\"4\n" +
 	"\rLogoutRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\xb2\x02\n" +
 	"\bAuthPair\x12!\n" +
@@ -546,11 +546,11 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x05 \x01(\tR\tsessionId2\xa5\x02\n" +
 	"\vAuthService\x127\n" +
-	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x11.auth.v1.AuthPair\x121\n" +
-	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x11.auth.v1.AuthPair\x125\n" +
-	"\aRefresh\x12\x17.auth.v1.RefreshRequest\x1a\x11.auth.v1.AuthPair\x128\n" +
-	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\x129\n" +
-	"\x06WhoAmI\x12\x16.google.protobuf.Empty\x1a\x17.auth.v1.WhoAmIResponseB\x18Z\x16byoverr/auth/v1;authv1b\x06proto3"
+	"\bRegister\x12\x18.chat.v1.RegisterRequest\x1a\x11.chat.v1.AuthPair\x121\n" +
+	"\x05Login\x12\x15.chat.v1.LoginRequest\x1a\x11.chat.v1.AuthPair\x125\n" +
+	"\aRefresh\x12\x17.chat.v1.RefreshRequest\x1a\x11.chat.v1.AuthPair\x128\n" +
+	"\x06Logout\x12\x16.chat.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\x129\n" +
+	"\x06WhoAmI\x12\x16.google.protobuf.Empty\x1a\x17.chat.v1.WhoAmIResponseB\x18Z\x16byoverr/chat/v1;authv1b\x06proto3"
 
 var (
 	file_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -566,32 +566,32 @@ func file_auth_v1_auth_proto_rawDescGZIP() []byte {
 
 var file_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_auth_v1_auth_proto_goTypes = []any{
-	(*RegisterRequest)(nil),       // 0: auth.v1.RegisterRequest
-	(*LoginRequest)(nil),          // 1: auth.v1.LoginRequest
-	(*RefreshRequest)(nil),        // 2: auth.v1.RefreshRequest
-	(*LogoutRequest)(nil),         // 3: auth.v1.LogoutRequest
-	(*AuthPair)(nil),              // 4: auth.v1.AuthPair
-	(*ClientInfo)(nil),            // 5: auth.v1.ClientInfo
-	(*WhoAmIResponse)(nil),        // 6: auth.v1.WhoAmIResponse
+	(*RegisterRequest)(nil),       // 0: chat.v1.RegisterRequest
+	(*LoginRequest)(nil),          // 1: chat.v1.LoginRequest
+	(*RefreshRequest)(nil),        // 2: chat.v1.RefreshRequest
+	(*LogoutRequest)(nil),         // 3: chat.v1.LogoutRequest
+	(*AuthPair)(nil),              // 4: chat.v1.AuthPair
+	(*ClientInfo)(nil),            // 5: chat.v1.ClientInfo
+	(*WhoAmIResponse)(nil),        // 6: chat.v1.WhoAmIResponse
 	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
-	5,  // 0: auth.v1.RegisterRequest.client:type_name -> auth.v1.ClientInfo
-	5,  // 1: auth.v1.LoginRequest.client:type_name -> auth.v1.ClientInfo
-	5,  // 2: auth.v1.RefreshRequest.client:type_name -> auth.v1.ClientInfo
-	7,  // 3: auth.v1.AuthPair.access_expires_at:type_name -> google.protobuf.Timestamp
-	7,  // 4: auth.v1.AuthPair.refresh_expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 5: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
-	1,  // 6: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
-	2,  // 7: auth.v1.AuthService.Refresh:input_type -> auth.v1.RefreshRequest
-	3,  // 8: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
-	8,  // 9: auth.v1.AuthService.WhoAmI:input_type -> google.protobuf.Empty
-	4,  // 10: auth.v1.AuthService.Register:output_type -> auth.v1.AuthPair
-	4,  // 11: auth.v1.AuthService.Login:output_type -> auth.v1.AuthPair
-	4,  // 12: auth.v1.AuthService.Refresh:output_type -> auth.v1.AuthPair
-	8,  // 13: auth.v1.AuthService.Logout:output_type -> google.protobuf.Empty
-	6,  // 14: auth.v1.AuthService.WhoAmI:output_type -> auth.v1.WhoAmIResponse
+	5,  // 0: chat.v1.RegisterRequest.client:type_name -> chat.v1.ClientInfo
+	5,  // 1: chat.v1.LoginRequest.client:type_name -> chat.v1.ClientInfo
+	5,  // 2: chat.v1.RefreshRequest.client:type_name -> chat.v1.ClientInfo
+	7,  // 3: chat.v1.AuthPair.access_expires_at:type_name -> google.protobuf.Timestamp
+	7,  // 4: chat.v1.AuthPair.refresh_expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 5: chat.v1.AuthService.Register:input_type -> chat.v1.RegisterRequest
+	1,  // 6: chat.v1.AuthService.Login:input_type -> chat.v1.LoginRequest
+	2,  // 7: chat.v1.AuthService.Refresh:input_type -> chat.v1.RefreshRequest
+	3,  // 8: chat.v1.AuthService.Logout:input_type -> chat.v1.LogoutRequest
+	8,  // 9: chat.v1.AuthService.WhoAmI:input_type -> google.protobuf.Empty
+	4,  // 10: chat.v1.AuthService.Register:output_type -> chat.v1.AuthPair
+	4,  // 11: chat.v1.AuthService.Login:output_type -> chat.v1.AuthPair
+	4,  // 12: chat.v1.AuthService.Refresh:output_type -> chat.v1.AuthPair
+	8,  // 13: chat.v1.AuthService.Logout:output_type -> google.protobuf.Empty
+	6,  // 14: chat.v1.AuthService.WhoAmI:output_type -> chat.v1.WhoAmIResponse
 	10, // [10:15] is the sub-list for method output_type
 	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name

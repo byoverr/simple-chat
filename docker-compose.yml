@@ -7,7 +7,7 @@ services:
       - APP_ENV=local
       - LOG_LEVEL=debug
       - GRPC_ADDR=:50051
-      - DATABASE_URL=postgres://auth:authpass@postgres:5432/authdb?sslmode=disable
+      - DATABASE_URL=postgres://chat:authpass@postgres:5432/authdb?sslmode=disable
       # Change these to secure values in production
       - JWT_SECRET=supersecretkey_must_be_very_long_32bytes_at_least
       - JWT_ACCESS_TTL=15m
@@ -32,13 +32,13 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./auth-service/migrations:/migrations
-    command: ["-path", "migrations", "-database", "postgres://auth:authpass@postgres:5432/authdb?sslmode=disable", "up"]
+      - ./chat-service/migrations:/migrations
+    command: ["-path", "migrations", "-database", "postgres://chat:authpass@postgres:5432/authdb?sslmode=disable", "up"]
 
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=auth
+      - POSTGRES_USER=chat
       - POSTGRES_PASSWORD=authpass
       - POSTGRES_DB=authdb
     ports:
@@ -46,7 +46,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U auth -d authdb"]
+      test: ["CMD-SHELL", "pg_isready -U chat -d authdb"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v6.33.2
-// source: auth/v1/auth.proto
+// source: chat/v1/chat.proto
 
 package authv1
 
@@ -20,11 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName = "/auth.v1.AuthService/Register"
-	AuthService_Login_FullMethodName    = "/auth.v1.AuthService/Login"
-	AuthService_Refresh_FullMethodName  = "/auth.v1.AuthService/Refresh"
-	AuthService_Logout_FullMethodName   = "/auth.v1.AuthService/Logout"
-	AuthService_WhoAmI_FullMethodName   = "/auth.v1.AuthService/WhoAmI"
+	AuthService_Register_FullMethodName = "/chat.v1.AuthService/Register"
+	AuthService_Login_FullMethodName    = "/chat.v1.AuthService/Login"
+	AuthService_Refresh_FullMethodName  = "/chat.v1.AuthService/Refresh"
+	AuthService_Logout_FullMethodName   = "/chat.v1.AuthService/Logout"
+	AuthService_WhoAmI_FullMethodName   = "/chat.v1.AuthService/WhoAmI"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -255,7 +255,7 @@ func _AuthService_WhoAmI_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AuthService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "auth.v1.AuthService",
+	ServiceName: "chat.v1.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -280,5 +280,5 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "auth/v1/auth.proto",
+	Metadata: "chat/v1/chat.proto",
 }
