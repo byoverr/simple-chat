@@ -1,55 +1,125 @@
 services:
+  # ─── DATABASES ───────────────────────────────────────────────────────────────
+  auth-postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: authpass
+      POSTGRES_DB: authdb
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d authdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  chat-postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chatpass
+      POSTGRES_DB: chatdb
+    volumes:
+      - chat_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat -d chatdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ─── MIGRATIONS (psql — idempotent, safe to re-run) ──────────────────────────
+  auth-migrate:
+    image: postgres:15-alpine
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    volumes:
+      - ./auth-service/migrations:/migrations:ro
+    environment:
+      PGPASSWORD: authpass
+    command: >
+      psql -h auth-postgres -U auth -d authdb
+           -f /migrations/01_init.up.sql
+    restart: "no"
+
+  chat-migrate:
+    image: postgres:15-alpine
+    depends_on:
+      chat-postgres:
+        condition: service_healthy
+    volumes:
+      - ./chat-service/migrations:/migrations:ro
+    environment:
+      PGPASSWORD: chatpass
+    command: >
+      psql -h chat-postgres -U chat -d chatdb
+           -f /migrations/01_init.up.sql
+    restart: "no"
+
+  # ─── AUTH SERVICE (gRPC + HTTP) ───────────────────────────────────────────────
   auth-service:
     build:
       context: .
       dockerfile: ./auth-service/Dockerfile
     environment:
-      - APP_ENV=local
-      - LOG_LEVEL=debug
-      - GRPC_ADDR=:50051
-      - DATABASE_URL=postgres://chat:authpass@postgres:5432/authdb?sslmode=disable
-      # Change these to secure values in production
-      - JWT_SECRET=supersecretkey_must_be_very_long_32bytes_at_least
-      - JWT_ACCESS_TTL=15m
-      - REFRESH_TTL=720h
-      - REFRESH_PEPPER=somepeppersecret
-      - REFRESH_TOKEN_BYTES=32
-      - REFRESH_REUSE_DETECT=true
-      - PASSWORD_HASH_ALGO=bcrypt
-      - BCRYPT_COST=12
-      - PASSWORD_MIN_LEN=8
-    ports:
-      - "50051:50051"
+      APP_ENV: production
+      LOG_LEVEL: info
+      GRPC_ADDR: ":50051"
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://auth:authpass@auth-postgres:5432/authdb?sslmode=disable
+      JWT_SECRET: supersecretkey_must_be_at_least_32_characters_long
+      JWT_ACCESS_TTL: 15m
+      REFRESH_TTL: 720h
+      REFRESH_PEPPER: peppervalueshouldbesecretinprod
+      REFRESH_TOKEN_BYTES: "32"
+      REFRESH_REUSE_DETECT: "true"
+      PASSWORD_HASH_ALGO: bcrypt
+      BCRYPT_COST: "12"
+      PASSWORD_MIN_LEN: "8"
     depends_on:
-      postgres:
+      auth-postgres:
         condition: service_healthy
-      migrate:
+      auth-migrate:
         condition: service_completed_successfully
+    restart: unless-stopped
 
-  migrate:
-    image: migrate/migrate:v4.19.1
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./chat-service/migrations:/migrations
-    command: ["-path", "migrations", "-database", "postgres://chat:authpass@postgres:5432/authdb?sslmode=disable", "up"]
-
-  postgres:
-    image: postgres:15-alpine
+  # ─── CHAT SERVICE (gRPC + HTTP) ──────────────────────────────────────────────
+  chat-service:
+    build:
+      context: .
+      dockerfile: ./chat-service/Dockerfile
     environment:
-      - POSTGRES_USER=chat
-      - POSTGRES_PASSWORD=authpass
-      - POSTGRES_DB=authdb
+      APP_ENV: production
+      LOG_LEVEL: info
+      GRPC_ADDR: ":50052"
+      HTTP_ADDR: ":8081"
+      DATABASE_URL: postgres://chat:chatpass@chat-postgres:5432/chatdb?sslmode=disable
+      JWT_SECRET: supersecretkey_must_be_at_least_32_characters_long
+    depends_on:
+      chat-postgres:
+        condition: service_healthy
+      chat-migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ─── NGINX (frontend on :3000, API proxy) ─────────────────────────────────────
+  nginx:
+    image: nginx:alpine
     ports:
-      - "5432:5432"
+      - "3000:80"   # frontend — http://localhost:3000
+      - "80:80"     # also available on port 80
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U chat -d authdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - auth-service
+      - chat-service
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  auth_postgres_data:
+  chat_postgres_data:
+

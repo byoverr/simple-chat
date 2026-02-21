@@ -25,12 +25,12 @@ create unique index if not exists chats_direct_key_uq
     where direct_key is not null;
 
 alter table chats
-    add constraint chats_type_chk
+    add constraint if not exists chats_type_chk
         check (type in (1,2,3));
 
 -- Для GROUP/CHANNEL требуем непустой title (DIRECT может быть пустым)
 alter table chats
-    add constraint chats_title_chk
+    add constraint if not exists chats_title_chk
         check (
             (type in (2,3) and length(btrim(title)) > 0)
                 or (type = 1)
@@ -38,7 +38,7 @@ alter table chats
 
 -- DIRECT: если direct_key задан, то type должен быть DIRECT
 alter table chats
-    add constraint chats_direct_key_type_chk
+    add constraint if not exists chats_direct_key_type_chk
         check (
             (direct_key is null) or (type = 1)
             );

@@ -1,17 +1,58 @@
 package grpcapp
 
-//import (
-//	"fmt"
-//	"net"
-//
-//	"github.com/rs/zerolog"
-//	"google.golang.org/grpc"
-//	"google.golang.org/grpc/reflection"
-//
-//	authv1 "github.com/byoverr/chat-proto/gen/go/chat/v1"
-//	authgrpc "github.com/byoverr/chat-service/internal/transport/grpc/chat"
-//	"github.com/byoverr/chat-service/internal/transport/grpc/interceptor"
-//)
+import (
+	"fmt"
+	"net"
+
+	chatv1 "github.com/byoverr/auth-proto/gen/go/chat/v1"
+	chatgrpc "github.com/byoverr/chat-service/internal/transport/grpc/chat"
+	chatinterceptor "github.com/byoverr/chat-service/internal/transport/grpc/interceptor"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+type App struct {
+	log        zerolog.Logger
+	gRPCServer *grpc.Server
+	addr       string
+}
+
+func New(log zerolog.Logger, chatService chatgrpc.ChatUsecase, jwtSecret string, addr string) *App {
+	gRPCServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			chatinterceptor.UnaryAuthInterceptor(jwtSecret, log),
+		),
+		grpc.ChainStreamInterceptor(
+			chatinterceptor.StreamAuthInterceptor(jwtSecret, log),
+		),
+	)
+
+	chatv1.RegisterChatServiceServer(gRPCServer, chatgrpc.NewChatServer(chatService, log))
+	reflection.Register(gRPCServer)
+
+	return &App{log: log, gRPCServer: gRPCServer, addr: addr}
+}
+
+func (a *App) MustRun() {
+	if err := a.Run(); err != nil {
+		panic(err)
+	}
+}
+
+func (a *App) Run() error {
+	lis, err := net.Listen("tcp", a.addr)
+	if err != nil {
+		return fmt.Errorf("grpcapp: listen: %w", err)
+	}
+	a.log.Info().Str("addr", lis.Addr().String()).Msg("grpc chat server started")
+	return a.gRPCServer.Serve(lis)
+}
+
+func (a *App) Stop() {
+	a.log.Info().Msg("stopping grpc chat server")
+	a.gRPCServer.GracefulStop()
+}
 
 //type App struct {
 //	log        zerolog.Logger

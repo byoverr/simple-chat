@@ -3,20 +3,9 @@ package usecase
 import "errors"
 
 var (
-	// input
-	ErrInvalidArgument = errors.New("invalid argument")
-
-	// chat
+	ErrNotFound        = errors.New("not found")
 	ErrAlreadyExists   = errors.New("already exists")
-	ErrInvalidCreds    = errors.New("invalid credentials")
-	ErrUserDisabled    = errors.New("user disabled")
+	ErrForbidden       = errors.New("forbidden")
+	ErrInvalidArgument = errors.New("invalid argument")
 	ErrUnauthenticated = errors.New("unauthenticated")
-
-	// sessions
-	ErrSessionExpired = errors.New("session expired")
-	ErrSessionRevoked = errors.New("session revoked")
-
-	// common
-	ErrNotFound         = errors.New("not found")
-	ErrPermissionDenied = errors.New("permission denied")
 )

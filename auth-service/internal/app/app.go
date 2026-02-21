@@ -1,16 +1,20 @@
 package app
 
 import (
-	"github.com/byoverr/auth-service/internal/app/grpc"
+	"net/http"
+
+	grpcapp "github.com/byoverr/auth-service/internal/app/grpc"
 	"github.com/byoverr/auth-service/internal/config"
 	"github.com/byoverr/auth-service/internal/security"
 	"github.com/byoverr/auth-service/internal/storage/postgres"
+	httphandler "github.com/byoverr/auth-service/internal/transport/http"
 	"github.com/byoverr/auth-service/internal/usecase"
 	"github.com/rs/zerolog"
 )
 
 type App struct {
 	GRPCServer *grpcapp.App
+	HTTPServer *http.Server
 	Storage    *postgres.Store
 }
 
@@ -47,8 +51,16 @@ func New(
 	// 4. gRPC
 	grpcApp := grpcapp.New(log, authService, jwtSigner, cfg.GRPC.Addr)
 
+	// 5. HTTP
+	h := httphandler.NewHandler(authService, log)
+	httpSrv := &http.Server{
+		Addr:    cfg.HTTP.Addr,
+		Handler: h,
+	}
+
 	return &App{
 		GRPCServer: grpcApp,
+		HTTPServer: httpSrv,
 		Storage:    storage,
 	}
 }

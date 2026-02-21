@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
+	pgx5pgconn "github.com/jackc/pgx/v5/pgconn"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
@@ -118,6 +119,21 @@ func (r *usersRepo) GetByID(ctx context.Context, id string) (models.User, error)
 }
 
 func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+	const uniqueViolation = "23505"
+	// pgx v4
+	var pgErr4 *pgconn.PgError
+	if errors.As(err, &pgErr4) {
+		return pgErr4.Code == uniqueViolation
+	}
+	// pgx v5 (used by gorm.io/driver/postgres >= 1.5)
+	var pgErr5 *pgx5pgconn.PgError
+	if errors.As(err, &pgErr5) {
+		return pgErr5.Code == uniqueViolation
+	}
+	// lib/pq
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return string(pqErr.Code) == uniqueViolation
+	}
+	return false
 }

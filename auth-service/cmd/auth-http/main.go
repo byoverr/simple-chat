@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/byoverr/chat-service/internal/app"
-	"github.com/byoverr/chat-service/internal/config"
-	loggerConstructor "github.com/byoverr/chat-service/pkg/logger"
+	"github.com/byoverr/auth-service/internal/app"
+	"github.com/byoverr/auth-service/internal/config"
+	loggerConstructor "github.com/byoverr/auth-service/pkg/logger"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	logger := loggerConstructor.New(loggerConstructor.Config{
 		Env:      cfg.App.Env,
 		LogLevel: cfg.App.LogLevel,
-		Service:  "chat-service",
+		Service:  "auth-service",
 	})
 
 	application := app.New(logger, cfg)
@@ -35,7 +35,7 @@ func main() {
 
 	// Start HTTP
 	go func() {
-		logger.Info().Str("addr", cfg.HTTP.Addr).Msg("http chat server started")
+		logger.Info().Str("addr", cfg.HTTP.Addr).Msg("http auth server started")
 		if err := application.HTTPServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal().Err(err).Msg("http server failed")
 		}

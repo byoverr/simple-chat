@@ -3,7 +3,7 @@ module github.com/byoverr/chat-service
 go 1.25.1
 
 require (
-	github.com/byoverr/proto v0.0.0
+	github.com/byoverr/auth-proto v0.0.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
@@ -46,4 +46,5 @@ require (
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
 
-replace github.com/byoverr/proto => ../protos
+replace github.com/byoverr/auth-proto => ../protos
+

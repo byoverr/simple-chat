@@ -291,6 +291,55 @@ func (s *Service) LogoutAll(ctx context.Context, userID string) error {
 	return nil
 }
 
+// GetUser returns public info about any user by ID (caller must be authenticated at HTTP layer).
+func (s *Service) GetUser(ctx context.Context, userID string) (models.UserInfo, error) {
+	const op = "usecase.GetUser"
+	log := s.log.With().Str("op", op).Str("user_id", userID).Logger()
+
+	if strings.TrimSpace(userID) == "" {
+		return models.UserInfo{}, fmt.Errorf("%w: user_id is required", ErrInvalidArgument)
+	}
+	u, err := s.st.Users().GetByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.UserInfo{}, ErrNotFound
+		}
+		log.Error().Err(err).Msg("failed to get user")
+		return models.UserInfo{}, err
+	}
+	return models.UserInfo{
+		UserID:      u.ID,
+		DisplayName: u.DisplayName,
+		Email:       u.Email,
+		Roles:       u.Roles,
+	}, nil
+}
+
+// LookupByEmail returns public info about a user with the given email.
+func (s *Service) LookupByEmail(ctx context.Context, email string) (models.UserInfo, error) {
+	const op = "usecase.LookupByEmail"
+	log := s.log.With().Str("op", op).Str("email", email).Logger()
+
+	email = normEmail(email)
+	if email == "" {
+		return models.UserInfo{}, fmt.Errorf("%w: email is required", ErrInvalidArgument)
+	}
+	u, err := s.st.Users().GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.UserInfo{}, ErrNotFound
+		}
+		log.Error().Err(err).Msg("failed to lookup user")
+		return models.UserInfo{}, err
+	}
+	return models.UserInfo{
+		UserID:      u.ID,
+		DisplayName: u.DisplayName,
+		Email:       u.Email,
+		Roles:       u.Roles,
+	}, nil
+}
+
 func (s *Service) WhoAmI(ctx context.Context, userID string) (models.UserInfo, error) {
 	const op = "usecase.WhoAmI"
 	log := s.log.With().Str("op", op).Str("user_id", userID).Logger()
@@ -402,18 +451,19 @@ func isValidEmail(email string) error {
 
 func (s *Service) validateRegister(in dto.RegisterIn) error {
 	if strings.TrimSpace(in.Email) == "" || strings.TrimSpace(in.Password) == "" || strings.TrimSpace(in.DisplayName) == "" {
-		return ErrInvalidArgument
+		return fmt.Errorf("%w: email, password and display name are required", ErrInvalidArgument)
+	}
+
+	if len(in.Password) < s.cfg.PasswordMinLen {
+		return fmt.Errorf("%w: password must be at least %d characters long", ErrInvalidArgument, s.cfg.PasswordMinLen)
 	}
 
 	if err := isValidPassword(in.Password); err != nil {
-		return err
+		return fmt.Errorf("%w: %s", ErrInvalidArgument, err)
 	}
 
 	if err := isValidEmail(in.Email); err != nil {
-		return err
-	}
-	if len(in.Password) < s.cfg.PasswordMinLen {
-		return ErrInvalidArgument
+		return fmt.Errorf("%w: %s", ErrInvalidArgument, err)
 	}
 	return nil
 }

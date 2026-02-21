@@ -11,6 +11,7 @@ import (
 type Config struct {
 	App  App
 	GRPC GRPC
+	HTTP HTTP
 	DB   DB
 	Auth Auth
 	Obs  Observability
@@ -23,6 +24,10 @@ type App struct {
 
 type GRPC struct {
 	Addr string `env:"GRPC_ADDR" env-default:":50051"`
+}
+
+type HTTP struct {
+	Addr string `env:"HTTP_ADDR" env-default:":8080"`
 }
 
 type DB struct {

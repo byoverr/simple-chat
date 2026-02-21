@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мессенджер</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --blue:        #2AABEE;
+  --blue-dark:   #1E8CC7;
+  --blue-deeper: #1B75A8;
+  --navy:        #2B5278;
+  --bg:          #EEF2F6;
+  --active-chat: #E8F4FD;
+  --hover-chat:  #F4F9FE;
+  --border:      #E6ECF2;
+  --text:        #222222;
+  --text-muted:  #8A9BB0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
+button { cursor: pointer; font-family: inherit; }
+input, textarea { font-family: inherit; }
+
+/* AUTH */
+.auth-wrap { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a3a5c 0%, #2b5278 50%, #1e8cc7 100%); }
+.auth-card { background: #fff; border-radius: 16px; padding: 40px 36px; width: 380px; box-shadow: 0 12px 48px rgba(0,0,0,.25); }
+.auth-logo { text-align: center; margin-bottom: 28px; }
+.auth-logo svg { width: 56px; height: 56px; }
+.auth-logo h2 { font-size: 22px; color: var(--navy); margin-top: 8px; font-weight: 700; }
+.auth-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; margin-bottom: 12px; font-size: 14px; outline: none; transition: border-color .2s, box-shadow .2s; background: #fafbfc; }
+.auth-card input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(42,171,238,.12); background: #fff; }
+.auth-submit { width: 100%; padding: 13px; background: var(--blue); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; transition: background .2s; margin-top: 4px; }
+.auth-submit:hover:not(:disabled) { background: var(--blue-dark); }
+.auth-submit:disabled { background: #a9cce3; }
+.auth-error { background: #fff0f0; border: 1px solid #ffcdd2; color: #d32f2f; border-radius: 8px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; }
+.auth-toggle { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-muted); }
+.auth-toggle a { color: var(--blue); font-weight: 600; cursor: pointer; }
+
+/* APP SHELL */
+.app { display: flex; height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: #fff; flex-shrink: 0; }
+.sidebar-header { background: var(--navy); padding: 14px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sidebar-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; text-transform: uppercase; }
+.sidebar-user { flex: 1; min-width: 0; }
+.sidebar-user .sname { color: #fff; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-user .semail { color: rgba(255,255,255,.55); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-logout { background: rgba(255,255,255,.12); border: none; border-radius: 7px; padding: 6px 11px; color: rgba(255,255,255,.8); font-size: 12px; transition: background .15s; }
+.btn-logout:hover { background: rgba(255,255,255,.22); color: #fff; }
+.sidebar-search { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.sidebar-search input { width: 100%; padding: 8px 14px; border: none; border-radius: 20px; background: var(--bg); font-size: 13px; outline: none; color: var(--text); }
+.btn-new-chat { margin: 10px 12px 4px; padding: 10px; background: var(--blue); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 600; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-new-chat:hover { background: var(--blue-dark); }
+.chatlist { flex: 1; overflow-y: auto; }
+.chatlist::-webkit-scrollbar { width: 4px; }
+.chatlist::-webkit-scrollbar-thumb { background: #c5d5e4; border-radius: 2px; }
+.chat-item { display: flex; gap: 11px; align-items: center; padding: 11px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .12s; }
+.chat-item:hover { background: var(--hover-chat); }
+.chat-item.active { background: var(--active-chat); border-left: 3px solid var(--blue); padding-left: 13px; }
+.ci-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.ci-icon.channel { background: #1b75a8; }
+.ci-info { flex: 1; min-width: 0; }
+.ci-row1 { display: flex; align-items: baseline; gap: 4px; margin-bottom: 3px; }
+.ci-row1 .ci-name { flex: 1; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-row1 .ci-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.ci-row2 { display: flex; align-items: center; gap: 4px; }
+.ci-preview { font-size: 12px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-unread { background: var(--blue); color: #fff; border-radius: 10px; font-size: 11px; font-weight: 600; padding: 1px 7px; min-width: 20px; text-align: center; flex-shrink: 0; }
+.chatlist-empty { padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: 13px; line-height: 1.7; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0; }
+.no-chat { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--text-muted); }
+.no-chat p { font-size: 15px; }
+
+/* CHAT HEADER */
+.chat-header { background: var(--navy); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.ch-icon { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.ch-info { flex: 1; min-width: 0; }
+.ch-info .ch-title { color: #fff; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-info .ch-sub { color: rgba(255,255,255,.6); font-size: 12px; margin-top: 1px; }
+.hbtn { background: rgba(255,255,255,.12); border: none; border-radius: 7px; padding: 7px 14px; color: rgba(255,255,255,.9); font-size: 12px; font-weight: 600; transition: background .15s; white-space: nowrap; }
+.hbtn:hover { background: rgba(255,255,255,.22); }
+.hbtn.red { background: rgba(231,76,60,.35); }
+.hbtn.red:hover { background: rgba(231,76,60,.6); }
+
+/* MESSAGES */
+.messages-wrap { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; }
+.messages-wrap::-webkit-scrollbar { width: 5px; }
+.messages-wrap::-webkit-scrollbar-thumb { background: #c5d5e4; border-radius: 3px; }
+.msg-date-sep { text-align: center; margin: 10px 0 6px; }
+.msg-date-sep span { background: rgba(42,171,238,.15); color: var(--blue-deeper); font-size: 12px; border-radius: 12px; padding: 3px 12px; }
+.msg-row { display: flex; flex-direction: column; margin: 1px 0; }
+.msg-row.mine { align-items: flex-end; }
+.msg-row.theirs { align-items: flex-start; }
+.msg-sender-name { font-size: 11px; font-weight: 700; color: var(--blue); margin: 4px 14px 2px; }
+.msg-bubble { max-width: 62%; border-radius: 12px; padding: 8px 12px 6px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.msg-row.mine   .msg-bubble { background: var(--blue); color: #fff; border-bottom-right-radius: 3px; }
+.msg-row.theirs .msg-bubble { background: #fff; color: var(--text); border-bottom-left-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.msg-text { white-space: pre-wrap; }
+.msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3px; }
+.msg-time { font-size: 10px; }
+.msg-row.mine   .msg-time { color: rgba(255,255,255,.7); }
+.msg-row.theirs .msg-time { color: var(--text-muted); }
+.msg-read { font-size: 11px; color: rgba(255,255,255,.75); }
+.msgs-center { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 14px; flex: 1; }
+.msgs-empty-pill { background: rgba(255,255,255,.85); color: var(--text-muted); font-size: 14px; padding: 12px 24px; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+/* INPUT */
+.input-bar { padding: 10px 16px; background: #f0f4f8; flex-shrink: 0; display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid var(--border); }
+.input-bar textarea { flex: 1; padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 22px; font-size: 14px; outline: none; resize: none; max-height: 120px; overflow-y: auto; background: #fff; line-height: 1.45; transition: border-color .2s; }
+.input-bar textarea:focus { border-color: var(--blue); }
+.btn-send { background: var(--blue); color: #fff; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, transform .1s; }
+.btn-send:hover:not(:disabled) { background: var(--blue-dark); transform: scale(1.05); }
+.btn-send:disabled { background: #b0c4d8; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+.modal-box { background: #fff; border-radius: 16px; padding: 28px; width: 460px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 56px rgba(0,0,0,.28); }
+.modal-box h3 { font-size: 18px; margin-bottom: 20px; color: var(--navy); }
+.modal-box input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 12px; transition: border-color .2s; background: #fafbfc; }
+.modal-box input:focus { border-color: var(--blue); background: #fff; }
+.type-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.type-btn { flex: 1; padding: 10px; border: 1.5px solid var(--border); border-radius: 9px; background: none; font-size: 13px; transition: all .15s; color: var(--text); }
+.type-btn.active { border-color: var(--blue); background: #e8f4fd; font-weight: 700; color: var(--blue-deeper); }
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.email-tag { background: #e8f4fd; border: 1px solid #aed6f1; border-radius: 16px; padding: 4px 10px 4px 13px; font-size: 13px; display: flex; align-items: center; gap: 7px; color: var(--blue-deeper); }
+.email-tag button { background: none; border: none; color: #7fb3d3; font-size: 16px; line-height: 1; padding: 0; transition: color .15s; }
+.email-tag button:hover { color: #c0392b; }
+.add-email-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.add-email-row input { margin-bottom: 0; flex: 1; }
+.btn-add { background: var(--blue); color: #fff; border: none; border-radius: 9px; padding: 11px 16px; font-size: 13px; font-weight: 600; white-space: nowrap; transition: background .15s; }
+.btn-add:hover:not(:disabled) { background: var(--blue-dark); }
+.btn-add:disabled { background: #a9cce3; }
+.modal-err { color: #c0392b; font-size: 12px; margin-bottom: 10px; padding: 8px 10px; background: #fdf2f2; border-radius: 8px; border: 1px solid #f5c6c6; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.modal-actions button { padding: 10px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; }
+.btn-cancel { background: #eef2f6; color: #555; }
+.btn-cancel:hover { background: #e0e8f0; }
+.btn-create { background: var(--blue); color: #fff; }
+.btn-create:hover:not(:disabled) { background: var(--blue-dark); }
+.btn-create:disabled { background: #a9cce3; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #1a3a5c; color: #fff; padding: 11px 22px; border-radius: 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.25); z-index: 2000; animation: toastIn .25s ease; pointer-events: none; }
+@keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+/* SPINNER */
+.spinner { width: 28px; height: 28px; border: 3px solid #d0e8f6; border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─── UTILS ────────────────────────────────────────────────
+const fmtTime = iso => {
+  if (!iso) return '';
+  const d = new Date(iso), now = new Date();
+  if (d.toDateString() === now.toDateString())
+    return d.toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+  if (now - d < 7*86400000)
+    return d.toLocaleDateString('ru', {weekday:'short'});
+  return d.toLocaleDateString('ru', {day:'2-digit', month:'2-digit'});
+};
+const fmtMsgTime = iso =>
+  iso ? new Date(iso).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}) : '';
+const fmtDateSep = iso => {
+  if (!iso) return '';
+  const d = new Date(iso), now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Сегодня';
+  if (d.toDateString() === new Date(now-86400000).toDateString()) return 'Вчера';
+  return d.toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+};
+const memberText = n => {
+  if (!n) return '';
+  const l=n%10, l2=n%100;
+  if (l===1&&l2!==11) return `${n} участник`;
+  if ([2,3,4].includes(l)&&![12,13,14].includes(l2)) return `${n} участника`;
+  return `${n} участников`;
+};
+
+// ─── API ──────────────────────────────────────────────────
+async function api(path, method='GET', body, token='') {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const resp = await fetch(path, opts);
+  const json = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const e = new Error(json.error || `HTTP ${resp.status}`);
+    e.status = resp.status;
+    throw e;
+  }
+  return json;
+}
+
+// ─── USER CACHE ───────────────────────────────────────────
+const _uCache = {};
+const _uInflight = {};
+async function resolveUser(id, token) {
+  if (_uCache[id]) return _uCache[id];
+  if (_uInflight[id]) return _uInflight[id];
+  _uInflight[id] = api(`/api/auth/users/${id}`, 'GET', undefined, token)
+    .then(d => { _uCache[id] = {id, display_name: d.display_name, email: d.email}; return _uCache[id]; })
+    .catch(() => { _uCache[id] = {id, display_name: id.slice(0,8)+'…', email:''}; return _uCache[id]; })
+    .finally(() => { delete _uInflight[id]; });
+  return _uInflight[id];
+}
+
+// ─── TOAST hook ───────────────────────────────────────────
+function useToast() {
+  const [msg, setMsg] = useState(null);
+  const t = useRef(null);
+  const show = useCallback(text => {
+    setMsg(text);
+    clearTimeout(t.current);
+    t.current = setTimeout(() => setMsg(null), 3500);
+  }, []);
+  return [msg, show];
+}
+
+// ─── AUTH SCREEN ──────────────────────────────────────────
+function AuthScreen({ onAuth }) {
+  const [mode, setMode]       = useState('login');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [name, setName]       = useState('');
+  const [email, setEmail]     = useState('');
+  const [pass, setPass]       = useState('');
+
+  const submit = async () => {
+    setError(''); setLoading(true);
+    try {
+      let data;
+      if (mode === 'login') {
+        data = await api('/api/auth/login', 'POST', {email, password: pass});
+      } else {
+        data = await api('/api/auth/register', 'POST', {email, password: pass, display_name: name});
+      }
+      let me = {};
+      try { me = await api('/api/auth/me', 'GET', undefined, data.access_token); } catch {}
+      const user = {
+        id: data.user_id,
+        display_name: me.display_name || name || email,
+        email: me.email || email,
+      };
+      _uCache[user.id] = user;
+      onAuth(data.access_token, user);
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const onKey = e => { if (e.key === 'Enter') submit(); };
+
+  return (
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="28" cy="28" r="28" fill="#2AABEE"/>
+            <path d="M12 27L28 33L45 16" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M28 33L24 44L20.5 37" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <h2>Мессенджер</h2>
+        </div>
+        {error && <div className="auth-error">{error}</div>}
+        {mode === 'register' && (
+          <input placeholder="Имя" value={name} onChange={e=>setName(e.target.value)} onKeyDown={onKey} />
+        )}
+        <input placeholder="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={onKey} autoFocus />
+        <input placeholder="Пароль" type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={onKey} />
+        <button className="auth-submit" onClick={submit} disabled={loading}>
+          {loading ? '…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+        </button>
+        <div className="auth-toggle">
+          {mode==='login' ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}
+          <a onClick={() => { setMode(m => m==='login'?'register':'login'); setError(''); }}>
+            {mode==='login' ? 'Зарегистрироваться' : 'Войти'}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CHAT ITEM ────────────────────────────────────────────
+function ChatItem({ chat, active, onClick }) {
+  const isChannel = chat.type === 3;
+  return (
+    <div className={'chat-item'+(active?' active':'')} onClick={onClick}>
+      <div className={'ci-icon'+(isChannel?' channel':'')}>{isChannel?'📢':'👥'}</div>
+      <div className="ci-info">
+        <div className="ci-row1">
+          <span className="ci-name">{chat.title||'Чат'}</span>
+          {chat.last_message && <span className="ci-time">{fmtTime(chat.last_message.created_at)}</span>}
+        </div>
+        <div className="ci-row2">
+          <span className="ci-preview">
+            {chat.last_message ? (chat.last_message.text||'') : <em>Нет сообщений</em>}
+          </span>
+          {chat.unread_count > 0 && <span className="ci-unread">{chat.unread_count}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SENDER NAME ──────────────────────────────────────────
+function SenderName({ userID, token }) {
+  const [name, setName] = useState(() => _uCache[userID]?.display_name || null);
+  useEffect(() => {
+    if (_uCache[userID]) { setName(_uCache[userID].display_name || _uCache[userID].email); return; }
+    resolveUser(userID, token).then(u => setName(u.display_name || u.email));
+  }, [userID]);
+  return <div className="msg-sender-name">{name||(userID.slice(0,8)+'…')}</div>;
+}
+
+// ─── MESSAGE ──────────────────────────────────────────────
+function Message({ msg, myID, token }) {
+  const mine = msg.sender_id === myID;
+  return (
+    <div className={'msg-row '+(mine?'mine':'theirs')}>
+      {!mine && <SenderName userID={msg.sender_id} token={token} />}
+      <div className="msg-bubble">
+        <div className="msg-text">{msg.text}</div>
+        <div className="msg-meta">
+          <span className="msg-time">{fmtMsgTime(msg.created_at)}</span>
+          {mine && <span className="msg-read">✓✓</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── NEW CHAT MODAL ───────────────────────────────────────
+function NewChatModal({ token, myEmail, onClose, onCreate }) {
+  const [chatType, setType]         = useState(2);
+  const [title, setTitle]           = useState('');
+  const [emailIn, setEmailIn]       = useState('');
+  const [tags, setTags]             = useState([]);
+  const [error, setError]           = useState('');
+  const [addBusy, setAddBusy]       = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+
+  const addEmail = async () => {
+    const em = emailIn.trim().toLowerCase();
+    if (!em) return;
+    if (em === myEmail.toLowerCase()) { setError('Это ваш собственный email'); return; }
+    if (tags.find(t => t.email === em)) { setEmailIn(''); return; }
+    setAddBusy(true); setError('');
+    try {
+      const d = await api(`/api/auth/users/lookup?email=${encodeURIComponent(em)}`,'GET',undefined,token);
+      setTags(ts => [...ts, {email:em, user_id:d.user_id, display_name:d.display_name}]);
+      setEmailIn('');
+    } catch(e) {
+      setError(e.status===404 ? `Пользователь не найден: ${em}` : e.message);
+    } finally { setAddBusy(false); }
+  };
+
+  const submit = async () => {
+    if (!title.trim()) { setError('Введите название чата'); return; }
+    setCreateBusy(true); setError('');
+    try {
+      const chat = await api('/api/chats','POST',{type:chatType, title:title.trim(), member_ids:tags.map(t=>t.user_id)},token);
+      onCreate(chat);
+    } catch(e) { setError('Ошибка: '+e.message); }
+    finally { setCreateBusy(false); }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-box">
+        <h3>Создать чат</h3>
+        <div className="type-row">
+          <button className={'type-btn'+(chatType===2?' active':'')} onClick={()=>setType(2)}>👥 Группа</button>
+          <button className={'type-btn'+(chatType===3?' active':'')} onClick={()=>setType(3)}>📢 Канал</button>
+        </div>
+        <input placeholder="Название чата" value={title}
+          onChange={e=>setTitle(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&submit()}
+          maxLength={100} autoFocus />
+        {tags.length > 0 && (
+          <div className="tags-wrap">
+            {tags.map(t => (
+              <div key={t.email} className="email-tag">
+                <span title={t.email}>{t.display_name||t.email}</span>
+                <button onClick={()=>setTags(ts=>ts.filter(x=>x.email!==t.email))}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="add-email-row">
+          <input placeholder="Email участника" type="email" value={emailIn}
+            onChange={e=>setEmailIn(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addEmail();}}} />
+          <button className="btn-add" onClick={addEmail} disabled={addBusy}>
+            {addBusy?'…':'Добавить'}
+          </button>
+        </div>
+        {error && <div className="modal-err">{error}</div>}
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>Отмена</button>
+          <button className="btn-create" onClick={submit} disabled={createBusy}>
+            {createBusy?'Создание…':'Создать'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CHAT VIEW ────────────────────────────────────────────
+function ChatView({ chat, token, myID, onLeave, showToast, onChatsChanged }) {
+  const [messages, setMessages]   = useState([]);
+  const [status, setStatus]       = useState('loading');
+  const [text, setText]           = useState('');
+  const [sending, setSending]     = useState(false);
+  const rendered   = useRef(new Set());
+  const lastMsgID  = useRef(null);
+  const sseStop    = useRef(null);
+  const bottomRef  = useRef(null);
+  const inputRef   = useRef(null);
+
+  const grouped = useMemo(() => {
+    const rows = [];
+    let lastDate = '';
+    messages.forEach(m => {
+      const ds = m.created_at ? new Date(m.created_at).toDateString() : '';
+      if (ds && ds !== lastDate) {
+        rows.push({kind:'sep', iso:m.created_at, key:'sep_'+m.id});
+        lastDate = ds;
+      }
+      rows.push({kind:'msg', msg:m, key:m.id});
+    });
+    return rows;
+  }, [messages]);
+
+  const addMsg = useCallback(m => {
+    if (!m?.id || rendered.current.has(m.id)) return false;
+    rendered.current.add(m.id);
+    lastMsgID.current = m.id;
+    setMessages(prev => [...prev, m]);
+    return true;
+  }, []);
+
+  const scrollDown   = useCallback(() => bottomRef.current?.scrollIntoView({behavior:'instant'}), []);
+  const scrollSmooth = useCallback(() => bottomRef.current?.scrollIntoView({behavior:'smooth'}), []);
+
+  const markRead = useCallback(msgID => {
+    if (!msgID) return;
+    fetch(`/api/chats/${chat.id}/read`, {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({message_id:msgID}),
+    }).then(()=>onChatsChanged()).catch(()=>{});
+  }, [token, chat.id, onChatsChanged]);
+
+  // history
+  useEffect(() => {
+    rendered.current.clear(); lastMsgID.current = null;
+    setMessages([]); setText(''); setStatus('loading');
+    if (sseStop.current) { sseStop.current(); sseStop.current = null; }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    fetch(`/api/chats/${chat.id}/messages`,{headers:{'Authorization':'Bearer '+token},signal:ctrl.signal})
+      .then(async resp => {
+        clearTimeout(timer);
+        if (resp.status===403) { setStatus('forbidden'); return; }
+        if (!resp.ok) throw new Error('HTTP '+resp.status);
+        const data = await resp.json();
+        const msgs = data.messages||[];
+        msgs.forEach(m => { rendered.current.add(m.id); lastMsgID.current=m.id; });
+        setMessages(msgs);
+        setStatus('ok');
+        if (msgs.length) markRead(msgs[msgs.length-1].id);
+        setTimeout(scrollDown, 60);
+      }).catch(e => { clearTimeout(timer); if (e.name!=='AbortError') setStatus('error'); });
+    return () => ctrl.abort();
+  }, [chat.id]);
+
+  // SSE
+  useEffect(() => {
+    if (status !== 'ok') return;
+    let alive = true;
+    const ac = new AbortController();
+    sseStop.current = () => { alive=false; ac.abort(); };
+
+    const connect = async () => {
+      try {
+        const resp = await fetch(`/api/chats/${chat.id}/events`,{headers:{'Authorization':'Bearer '+token},signal:ac.signal});
+        if (!resp.ok||!resp.body) return;
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        while (alive) {
+          const {done,value} = await reader.read();
+          if (done) break;
+          buf += dec.decode(value,{stream:true});
+          const lines = buf.split('\n'); buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const m = JSON.parse(line.slice(6));
+              if (addMsg(m)) {
+                setTimeout(scrollSmooth,40);
+                if (!document.hidden) markRead(m.id);
+              }
+            } catch {}
+          }
+        }
+      } catch(e) {
+        if (!alive||e.name==='AbortError') return;
+        setTimeout(()=>{ if(alive) connect(); },4000);
+      }
+    };
+    connect();
+    return ()=>{ alive=false; ac.abort(); };
+  }, [status, chat.id]);
+
+  // focus → mark read
+  useEffect(() => {
+    const fn = ()=>{ if(lastMsgID.current) markRead(lastMsgID.current); };
+    window.addEventListener('focus', fn);
+    return ()=>window.removeEventListener('focus', fn);
+  }, [markRead]);
+
+  const sendMsg = async () => {
+    const t = text.trim();
+    if (!t||sending) return;
+    setText('');
+    if (inputRef.current) inputRef.current.style.height='auto';
+    setSending(true);
+    try {
+      const m = await api(`/api/chats/${chat.id}/messages`,'POST',{text:t},token);
+      addMsg(m); setTimeout(scrollSmooth,40); onChatsChanged();
+    } catch(e) { showToast('Ошибка отправки: '+e.message); setText(t); }
+    finally { setSending(false); inputRef.current?.focus(); }
+  };
+
+  const handleKey = e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} };
+  const autoResize = e => { e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,120)+'px'; };
+
+  const joinChat = async () => {
+    try { await api(`/api/chats/${chat.id}/join`,'POST',{},token); setStatus('ok'); onChatsChanged(); }
+    catch(e) { showToast('Ошибка: '+e.message); }
+  };
+  const leaveChat = async () => {
+    if (!confirm('Покинуть чат?')) return;
+    try { await api(`/api/chats/${chat.id}/leave`,'POST',{},token); onLeave(); }
+    catch(e) { showToast('Ошибка: '+e.message); }
+  };
+
+  const isMember = status !== 'forbidden';
+
+  return (
+    <>
+      <div className="chat-header">
+        <div className="ch-icon">{chat.type===3?'📢':'👥'}</div>
+        <div className="ch-info">
+          <div className="ch-title">{chat.title||'Чат'}</div>
+          <div className="ch-sub">{memberText(chat.members_count)}</div>
+        </div>
+        {!isMember && <button className="hbtn" onClick={joinChat}>Вступить</button>}
+        {isMember  && <button className="hbtn red" onClick={leaveChat}>Покинуть</button>}
+      </div>
+
+      <div className="messages-wrap">
+        {status==='loading' && <div className="msgs-center"><div className="spinner"/></div>}
+        {status==='error'   && <div className="msgs-center">Не удалось загрузить.&nbsp;<a href="#" onClick={e=>{e.preventDefault();setStatus('loading');}}>Повторить</a></div>}
+        {status==='forbidden' && <div className="msgs-center"><span className="msgs-empty-pill">Вы не участник этого чата</span></div>}
+        {status==='ok'&&messages.length===0 && <div className="msgs-center"><span className="msgs-empty-pill">Нет сообщений. Напишите первым!</span></div>}
+        {status==='ok' && grouped.map(row =>
+          row.kind==='sep'
+            ? <div key={row.key} className="msg-date-sep"><span>{fmtDateSep(row.iso)}</span></div>
+            : <Message key={row.key} msg={row.msg} myID={myID} token={token}/>
+        )}
+        <div ref={bottomRef}/>
+      </div>
+
+      {isMember && (
+        <div className="input-bar">
+          <textarea ref={inputRef} rows={1} placeholder="Написать сообщение…"
+            value={text} onChange={e=>setText(e.target.value)}
+            onInput={autoResize} onKeyDown={handleKey} disabled={sending}/>
+          <button className="btn-send" onClick={sendMsg} disabled={!text.trim()||sending}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────
+function App() {
+  const [token, setToken]         = useState(()=>localStorage.getItem('access_token')||'');
+  const [currentUser, setUser]    = useState(()=>JSON.parse(localStorage.getItem('current_user')||'null'));
+  const [chats, setChats]         = useState([]);
+  const [activeChatID, setActive] = useState(null);
+  const [showModal, setModal]     = useState(false);
+  const [search, setSearch]       = useState('');
+  const [toastMsg, showToast]     = useToast();
+  const pollRef = useRef(null);
+
+  const activeChat = useMemo(()=>chats.find(c=>c.id===activeChatID)||null,[chats,activeChatID]);
+
+  const loadChats = useCallback(async tok => {
+    const t = tok||token;
+    if (!t) return;
+    try { const d=await api('/api/chats','GET',undefined,t); setChats(d.chats||[]); } catch {}
+  },[token]);
+
+  useEffect(()=>{
+    if (!token) return;
+    loadChats(token);
+    clearInterval(pollRef.current);
+    pollRef.current = setInterval(()=>loadChats(),20000);
+    return ()=>clearInterval(pollRef.current);
+  },[token]);
+
+  const onAuth = useCallback((tok,user)=>{
+    localStorage.setItem('access_token',tok);
+    localStorage.setItem('current_user',JSON.stringify(user));
+    setToken(tok); setUser(user); loadChats(tok);
+  },[]);
+
+  const onLogout = ()=>{
+    localStorage.clear(); clearInterval(pollRef.current);
+    setToken(''); setUser(null); setChats([]); setActive(null);
+  };
+
+  const openChat = id=>{
+    setActive(id);
+    setChats(cs=>cs.map(c=>c.id===id?{...c,unread_count:0}:c));
+  };
+
+  const onCreated = async chat=>{ setModal(false); await loadChats(); setActive(chat.id); };
+
+  const filtered = useMemo(()=>{
+    if (!search.trim()) return chats;
+    const q=search.toLowerCase();
+    return chats.filter(c=>(c.title||'').toLowerCase().includes(q));
+  },[chats,search]);
+
+  if (!token||!currentUser) return <AuthScreen onAuth={onAuth}/>;
+
+  const initials = (currentUser.display_name||currentUser.email||'?')[0].toUpperCase();
+
+  return (
+    <div className="app">
+      {/* SIDEBAR */}
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-avatar">{initials}</div>
+          <div className="sidebar-user">
+            <div className="sname">{currentUser.display_name||currentUser.email}</div>
+            <div className="semail">{currentUser.email}</div>
+          </div>
+          <button className="btn-logout" onClick={onLogout}>Выйти</button>
+        </div>
+        <div className="sidebar-search">
+          <input placeholder="🔍  Поиск чатов…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+        <button className="btn-new-chat" onClick={()=>setModal(true)}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Новый чат
+        </button>
+        <div className="chatlist">
+          {filtered.length===0
+            ? <div className="chatlist-empty">{search?'Ничего не найдено':'Нет чатов.\nСоздайте первый!'}</div>
+            : filtered.map(c=><ChatItem key={c.id} chat={c} active={c.id===activeChatID} onClick={()=>openChat(c.id)}/>)
+          }
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <div className="main">
+        {!activeChat ? (
+          <div className="no-chat">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#2AABEE" strokeWidth="1.2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeOpacity=".3"/>
+            </svg>
+            <p>Выберите чат или создайте новый</p>
+          </div>
+        ) : (
+          <ChatView
+            key={activeChatID}
+            chat={activeChat}
+            token={token}
+            myID={currentUser.id}
+            onLeave={()=>{setActive(null);loadChats();}}
+            showToast={showToast}
+            onChatsChanged={loadChats}
+          />
+        )}
+      </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <NewChatModal
+          token={token}
+          myEmail={currentUser.email}
+          onClose={()=>setModal(false)}
+          onCreate={onCreated}
+        />
+      )}
+
+      {/* TOAST */}
+      {toastMsg && <div className="toast">{toastMsg}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
